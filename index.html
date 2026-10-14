@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAEC - Secretariat & Administration Hub</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (XLSX) CDN untuk Download Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- html2pdf.js untuk Download PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f4f6f9;
+            color: #1e293b;
+        }
+        .hero-banner {
+            background: linear-gradient(135deg, #00b4db 0%, #0083b0 35%, #6a11cb 70%, #2575fc 100%);
+        }
+        .card-bright {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-pill {
+            border-radius: 9999px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+        .btn-pill:active {
+            transform: translateY(0);
+        }
+        .active-tab {
+            background-color: #0284c7 !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+        }
+        
+        /* Smooth Fade In untuk Tab Content */
+        .tab-content {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .tab-content.show-tab {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Smooth Transition untuk Accordion Details */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            opacity: 0;
+        }
+        .accordion-content.open {
+            max-height: none;
+            overflow-x: auto;
+            opacity: 1;
+        }
+
+        /* Smooth Transition Modal Overlay & Box */
+        .modal-backdrop {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-box {
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-backdrop.open .modal-box {
+            transform: scale(1) translateY(0);
+        }
+
+        /* Layout khusus Print Cetak */
+        @media print {
+            header, nav, .no-print, button {
+                display: none !important;
+            }
+            body {
+                background-color: #fff !important;
+                color: #000 !important;
+            }
+            .card-bright {
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+        }
+        .print-only { display: none; }
+    </style>
+</head>
+<body class="min-h-screen pb-16">
+
+    <!-- Header Navigation Bar -->
+    <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-4 py-3 no-print transition-all duration-300">
+        <div class="w-full flex flex-wrap justify-between items-center gap-4">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-sky-500 text-white font-extrabold text-xl flex items-center justify-center shadow-md transition-transform duration-300 hover:scale-105">
+                    EC
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg text-slate-900 tracking-tight leading-none">GAEC - Central of Admisi</h1>
+                    <p class="text-xs text-slate-500 font-semibold mt-1">SMAN 1 Purbalingga</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex items-center space-x-1 bg-slate-100 p-1.5 rounded-full text-xs font-bold text-slate-600 overflow-x-auto">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn btn-pill px-3.5 py-1.5 active-tab">DASHBOARD</button>
+                <button onclick="switchTab('members')" id="tab-members" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">MEMBERS</button>
+                <button onclick="switchTab('presence')" id="tab-presence" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">PRESENCE</button>
+                <button onclick="switchTab('report')" id="tab-report" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">REPORT</button>
+                <button onclick="switchTab('notulensi')" id="tab-notulensi" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">NOTULENSI</button>
+                <button onclick="switchTab('surat')" id="tab-surat" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">ARSIP SURAT</button>
+                <button onclick="switchTab('journal')" id="tab-journal" class="tab-btn btn-pill px-3.5 py-1.5 hover:text-slate-900">ACTIVITY LOG</button>
+                <a href="SP_Generator.html" target="_blank" class="btn-pill px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1 shadow-sm transition">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> SP Generator
+                </a>
+            </nav>
+
+            <!-- Status Badge -->
+            <div class="hidden lg:flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-full text-xs font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> LocalStorage Active
+            </div>
+        </div>
+    </header>
+
+    <main class="w-full px-4 sm:px-6 lg:px-8 mt-6">
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="sec-dashboard" class="tab-content hidden space-y-6">
+            <div class="hero-banner rounded-3xl p-6 sm:p-10 text-white shadow-2xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8">
+                <div class="max-w-xl z-10">
+                    <span class="inline-block bg-white/20 backdrop-blur-md text-white text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider mb-4 border border-white/30">
+                        SMAN 1 PURBALINGGA | OFFICIAL GAEC PLATFORM
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold leading-tight mb-4">
+                        Connecting G64 & G65, Managing Secretariat Excellence.
+                    </h2>
+                    <p class="text-white/90 text-sm sm:text-base font-medium mb-6">
+                        Pusat kendali sekretariat untuk presensi terintegrasi, rekapitulasi kehadiran, notulensi rapat, dan pengarsipan surat.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="openAddMemberModal()" class="btn-pill bg-white text-slate-800 font-bold px-4 py-2.5 text-xs shadow-lg flex items-center gap-2">
+                            <i data-lucide="user-plus" class="w-4 h-4 text-sky-600"></i> Add Member
+                        </button>
+                        <button onclick="switchTab('presence')" class="btn-pill bg-white text-slate-800 font-bold px-4 py-2.5 text-xs shadow-lg flex items-center gap-2">
+                            <i data-lucide="calendar-check" class="w-4 h-4 text-emerald-600"></i> Input Presensi
+                        </button>
+                        <button onclick="switchTab('surat')" class="btn-pill bg-white text-slate-800 font-bold px-4 py-2.5 text-xs shadow-lg flex items-center gap-2">
+                            <i data-lucide="archive" class="w-4 h-4 text-purple-600"></i> Arsip Surat
+                        </button>
+                        <a href="SP_Generator.html" target="_blank" class="btn-pill bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2.5 text-xs shadow-lg flex items-center gap-2 transition">
+                            <i data-lucide="file-text" class="w-4 h-4 text-white"></i> Buka SP Generator
+                        </a>
+                    </div>
+                </div>
+
+                <div class="w-full lg:w-auto z-10">
+                    <div class="bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl p-4 flex gap-3 text-slate-800">
+                        <div class="bg-white rounded-xl p-4 shadow-md w-32 text-center transition-transform hover:-translate-y-1 duration-300">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">GAEC Members</p>
+                            <p class="text-2xl font-extrabold text-sky-600 mt-1" id="hero-members-count">0</p>
+                            <p class="text-[10px] text-slate-500 font-semibold mt-1">G64 & G65</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-md w-32 text-center transition-transform hover:-translate-y-1 duration-300">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Presence Rate</p>
+                            <p class="text-2xl font-extrabold text-emerald-600 mt-1" id="hero-presence-rate">0%</p>
+                            <p class="text-[10px] text-slate-500 font-semibold mt-1">Rata-rata</p>
+                        </div>
+                        <div class="bg-white rounded-xl p-4 shadow-md w-32 text-center transition-transform hover:-translate-y-1 duration-300">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase">Notulensi</p>
+                            <p class="text-2xl font-extrabold text-purple-600 mt-1" id="hero-notulensi-count">0</p>
+                            <p class="text-[10px] text-slate-500 font-semibold mt-1">Rapat</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-xs font-extrabold text-slate-400 uppercase tracking-widest mb-3">Statistik Sekretariat Real-Time</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="card-bright rounded-2xl p-5 flex items-center justify-between hover:shadow-lg">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Anggota G64</p>
+                            <p class="text-2xl font-extrabold text-sky-600 mt-1" id="dash-g64-count">0</p>
+                        </div>
+                        <div class="p-3 bg-sky-50 text-sky-600 rounded-xl"><i data-lucide="users"></i></div>
+                    </div>
+                    <div class="card-bright rounded-2xl p-5 flex items-center justify-between hover:shadow-lg">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Anggota G65</p>
+                            <p class="text-2xl font-extrabold text-indigo-600 mt-1" id="dash-g65-count">0</p>
+                        </div>
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><i data-lucide="users"></i></div>
+                    </div>
+                    <div class="card-bright rounded-2xl p-5 flex items-center justify-between hover:shadow-lg">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Total Sesi Presensi</p>
+                            <p class="text-2xl font-extrabold text-emerald-600 mt-1" id="dash-sessions-count">0</p>
+                        </div>
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><i data-lucide="calendar"></i></div>
+                    </div>
+                    <div class="card-bright rounded-2xl p-5 flex items-center justify-between hover:shadow-lg">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Arsip Surat</p>
+                            <p class="text-2xl font-extrabold text-purple-600 mt-1" id="dash-surat-count">0</p>
+                        </div>
+                        <div class="p-3 bg-purple-50 text-purple-600 rounded-xl"><i data-lucide="archive"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: MEMBERS -->
+        <div id="sec-members" class="tab-content hidden space-y-6">
+            <div class="card-bright rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Master Data Anggota GAEC</h2>
+                        <p class="text-xs text-slate-500">Daftar siswa terdaftar angkatan G64 dan G65</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filter-members-angkatan" onchange="renderAnggota()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition focus:border-sky-500 focus:outline-none">
+                            <option value="ALL">Semua Angkatan</option>
+                            <option value="G64">Angkatan G64</option>
+                            <option value="G65">Angkatan G65</option>
+                        </select>
+                        <button onclick="openAddMemberModal()" class="btn-pill bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 flex items-center gap-2">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i> Add Member
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="anggota-grid">
+                    <!-- Anggota dirender via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: PRESENCE & PRESENCE JOURNAL -->
+        <div id="sec-presence" class="tab-content hidden space-y-6">
+            
+            <!-- ARSIP FOLDER GOOGLE DRIVE SCAN SURAT IJIN -->
+            <div class="card-bright rounded-2xl p-6 bg-slate-50/50 border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="folder-kanban" class="text-sky-600"></i> Google Drive Folder Arsip Scan Surat Izin
+                        </h2>
+                        <p class="text-xs text-slate-500">Masukkan tautan folder Google Drive tempat penyimpanan file scan surat izin/sakit siswa</p>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="url" id="input-drive-folder-url" placeholder="https://drive.google.com/drive/folders/..." class="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                    <button onclick="saveDriveFolderUrl()" class="btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold px-5 py-2.5 text-xs flex items-center justify-center gap-2 shadow-sm">
+                        <i data-lucide="save" class="w-4 h-4"></i> Simpan Link Folder
+                    </button>
+                </div>
+                <div id="drive-folder-display-container" class="mt-3 text-xs font-medium text-slate-600">
+                    <!-- Status link folder drive -->
+                </div>
+            </div>
+
+            <!-- ARSIP SCAN DAFTAR HADIR -->
+            <div class="card-bright rounded-2xl p-6 bg-slate-50/50 border border-slate-200">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="file-check" class="text-sky-600"></i> Arsip Scan Daftar Hadir
+                        </h2>
+                        <p class="text-xs text-slate-500">Unggah berkas fisik scan daftar hadir yang dipasangkan dengan Activity Log</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Upload Scan -->
+                    <div class="lg:col-span-1 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                        <form id="form-upload-scan-dh" onsubmit="uploadScanDaftarHadir(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Pilih Kegiatan (Activity Log)</label>
+                                <select id="scan-dh-activity" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                                    <!-- Populated dynamically via JS -->
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Berkas Scan Daftar Hadir (Gambar / PDF)</label>
+                                <input type="file" id="scan-dh-file" accept="image/*,application/pdf" required class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Catatan / Keterangan Tambahan (Opsional)</label>
+                                <input type="text" id="scan-dh-keterangan" placeholder="Contoh: Lembar TTD Fisik Lab Bahasa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                            </div>
+                            <button type="submit" class="w-full btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 text-xs flex justify-center items-center gap-2 shadow-md">
+                                <i data-lucide="upload" class="w-4 h-4"></i> Upload Scan Daftar Hadir
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Daftar Scan Daftar Hadir Terarsip -->
+                    <div class="lg:col-span-2 space-y-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-bold text-slate-700 uppercase tracking-wider">Berkas Tersimpan</h3>
+                            <span class="text-xs text-slate-400 font-semibold" id="scan-dh-count">0 Berkas</span>
+                        </div>
+                        <div id="scan-dh-list" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                            <!-- Generated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Input Presensi Pertemuan -->
+            <div class="card-bright rounded-2xl p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="calendar" class="text-sky-600"></i> Input Presensi Pertemuan Ekskul
+                        </h2>
+                        <p class="text-xs text-slate-500">Pilih tanggal dan angkatan untuk menampilkan daftar siswa</p>
+                    </div>
+                    
+                    <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Tanggal Pertemuan</label>
+                            <input type="date" id="input-tanggal-ekskul" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">Filter Angkatan</label>
+                            <select id="presence-filter-angkatan" onchange="generatePresenceTable()" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                                <option value="ALL">Semua (G64 & G65)</option>
+                                <option value="G64">G64 Only</option>
+                                <option value="G65">G65 Only</option>
+                            </select>
+                        </div>
+
+                        <div class="self-end">
+                            <button onclick="saveAllPresence()" class="btn-pill bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 text-xs flex items-center gap-2 shadow-sm">
+                                <i data-lucide="save" class="w-4 h-4"></i> Simpan Presensi Pertemuan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 text-xs font-bold uppercase">
+                                <th class="py-3 px-3">No</th>
+                                <th class="py-3 px-3">Nama Anggota</th>
+                                <th class="py-3 px-3">Kelas</th>
+                                <th class="py-3 px-3">Angkatan</th>
+                                <th class="py-3 px-3">Prioritas Ekskul</th>
+                                <th class="py-3 px-3">Status Kehadiran</th>
+                                <th class="py-3 px-3">Keterangan (Opsional)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="presence-input-table-body" class="text-sm divide-y divide-slate-100">
+                            <!-- Generated Rows by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PRESENCE JOURNAL (BERBENTUK FOLDER ACCORDION TANGGAL) -->
+            <div class="card-bright rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="folder-clock" class="text-purple-600"></i> Presence Journal
+                        </h2>
+                        <p class="text-xs text-slate-500">Riwayat presensi ekskul dikelompokkan berdasarkan tanggal pertemuan</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <select id="journal-filter-angkatan" onchange="renderPresenceJournal()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 transition focus:outline-none focus:border-sky-500">
+                            <option value="ALL">Semua Angkatan</option>
+                            <option value="G64">Filter G64</option>
+                            <option value="G65">Filter G65</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="presence-journal-accordion" class="space-y-4">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 4: REPORT -->
+        <div id="sec-report" class="tab-content hidden space-y-6">
+            <div class="card-bright rounded-2xl p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 no-print">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="bar-chart-3" class="text-sky-600"></i> Rekapitulasi Presensi Anggota
+                        </h2>
+                        <p class="text-xs text-slate-500">Total akumulasi Hadir, Sakit, Izin, dan Alpha dari awal hingga saat ini</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 items-center">
+                        <select id="report-filter-angkatan" onchange="renderAttendanceReport()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition focus:outline-none focus:border-sky-500">
+                            <option value="ALL">Semua Angkatan</option>
+                            <option value="G64">Angkatan G64</option>
+                            <option value="G65">Angkatan G65</option>
+                        </select>
+                        <button onclick="downloadReportPDF()" class="btn-pill bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="file-text" class="w-4 h-4"></i> Download PDF
+                        </button>
+                        <button onclick="downloadReportXLS()" class="btn-pill bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2 flex items-center gap-1.5 shadow-sm">
+                            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Download XLS
+                        </button>
+                        <button onclick="window.print()" class="btn-pill bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3.5 py-2 flex items-center gap-1.5">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Cetak
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mb-6 hidden print-only">
+                    <h2 class="text-lg font-bold uppercase">REKAPITULASI KEHADIRAN ANGGOTA GAEC</h2>
+                    <p class="text-xs">GANESHA ACTIVE ENGLISH CLUB - SMA NEGERI 1 PURBALINGGA</p>
+                    <hr class="border-slate-400 my-2">
+                </div>
+
+                <div class="overflow-x-auto" id="report-table-container">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-500 text-xs font-bold uppercase bg-slate-50">
+                                <th class="py-3 px-3">No</th>
+                                <th class="py-3 px-3">Nama Siswa</th>
+                                <th class="py-3 px-3">Kelas</th>
+                                <th class="py-3 px-3">Angkatan</th>
+                                <th class="py-3 px-3 text-center">Prioritas</th>
+                                <th class="py-3 px-3 text-center text-emerald-600">Hadir</th>
+                                <th class="py-3 px-3 text-center text-sky-600">Sakit</th>
+                                <th class="py-3 px-3 text-center text-amber-600">Izin</th>
+                                <th class="py-3 px-3 text-center text-rose-600">Alpha</th>
+                                <th class="py-3 px-3 text-center">% Kehadiran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body" class="text-sm divide-y divide-slate-100">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 5: NOTULENSI -->
+        <div id="sec-notulensi" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card-bright rounded-2xl p-6 lg:col-span-1 h-fit no-print">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="file-signature" class="text-purple-600"></i> Buat Notulensi Rapat
+                    </h2>
+                    <form id="form-notulensi" onsubmit="saveNotulensi(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tanggal Rapat</label>
+                            <input type="date" id="not-tanggal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Judul / Agenda Rapat</label>
+                            <input type="text" id="not-judul" placeholder="e.g. Rapat Persiapan English Competition" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Pimpinan Rapat</label>
+                            <input type="text" id="not-pimpinan" placeholder="Nama Pimpinan Rapat" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Peserta Hadir</label>
+                            <input type="text" id="not-peserta" placeholder="e.g. Pengurus GAEC G64 & G65" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Hasil & Keputusan Rapat</label>
+                            <textarea id="not-hasil" rows="5" placeholder="Tuliskan poin-poin keputusan rapat di sini..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500"></textarea>
+                        </div>
+                        <button type="submit" class="w-full btn-pill bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 text-xs flex justify-center items-center gap-2 shadow-md">
+                            <i data-lucide="save" class="w-4 h-4"></i> Simpan Notulensi
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 space-y-4" id="notulensi-list">
+                    <!-- JS Generated -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: ARSIP SURAT -->
+        <div id="sec-surat" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Form Upload Arsip Surat -->
+                <div class="card-bright rounded-2xl p-6 lg:col-span-1 h-fit no-print">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="file-up" class="text-sky-600"></i> Upload Arsip Surat
+                        </h2>
+                        <a href="SP_Generator.html" target="_blank" class="text-xs text-amber-600 hover:text-amber-700 font-bold flex items-center gap-1">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buat SP
+                        </a>
+                    </div>
+                    <form id="form-upload-surat" onsubmit="uploadArsipSurat(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nomor Surat</label>
+                            <input type="text" id="arsip-nomor" placeholder="e.g. 001/GAEC/SMA1/2026" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Perihal / Judul Surat</label>
+                            <input type="text" id="arsip-perihal" placeholder="e.g. Permohonan Izin Lab Bahasa" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jenis / Kategori</label>
+                            <select id="arsip-kategori" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-sky-500">
+                                <option value="Surat Masuk">Surat Masuk</option>
+                                <option value="Surat Keluar">Surat Keluar</option>
+                                <option value="Surat Undangan">Surat Undangan</option>
+                                <option value="Surat Tugas">Surat Tugas</option>
+                                <option value="Lain-lain">Lain-lain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Tanggal Surat</label>
+                            <input type="date" id="arsip-tanggal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-sky-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">File Surat (PDF / Word / Gambar)</label>
+                            <input type="file" id="arsip-file" accept=".pdf,.doc,.docx,image/*" required class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-100 file:text-sky-700 hover:file:bg-sky-200 transition">
+                        </div>
+                        <button type="submit" class="w-full btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 text-xs flex justify-center items-center gap-2 shadow-md">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Simpan ke Arsip Surat
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Daftar Berkas Arsip Surat -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="card-bright rounded-2xl p-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="archive" class="text-purple-600"></i> Daftar Arsip Surat GAEC
+                                </h2>
+                                <p class="text-xs text-slate-500">Riwayat berkas dokumen surat terarsip dalam sistem</p>
+                            </div>
+                            <div>
+                                <select id="filter-arsip-kategori" onchange="renderArsipSurat()" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 transition focus:outline-none focus:border-sky-500">
+                                    <option value="ALL">Semua Kategori</option>
+                                    <option value="Surat Masuk">Surat Masuk</option>
+                                    <option value="Surat Keluar">Surat Keluar</option>
+                                    <option value="Surat Undangan">Surat Undangan</option>
+                                    <option value="Surat Tugas">Surat Tugas</option>
+                                    <option value="Lain-lain">Lain-lain</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="arsip-surat-list" class="space-y-3">
+                            <!-- JS Generated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: ACTIVITY LOG -->
+        <div id="sec-journal" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card-bright rounded-2xl p-6 lg:col-span-1 h-fit">
+                    <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="book-open" class="text-purple-600"></i> New Activity Log
+                    </h2>
+                    <form id="form-jurnal" onsubmit="saveJurnal(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Date</label>
+                            <input type="date" id="jur-tanggal" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Agenda / Topic</label>
+                            <input type="text" id="jur-materi" placeholder="e.g. Speech Competition Practice" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Mentor / Speaker</label>
+                            <input type="text" id="jur-pemateri" placeholder="Mentor Name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Activity Summary</label>
+                            <textarea id="jur-ringkasan" rows="3" placeholder="Summary of today's session..." required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 transition focus:outline-none focus:border-purple-500"></textarea>
+                        </div>
+                        <button type="submit" class="w-full btn-pill bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 text-xs flex justify-center items-center gap-2 shadow-md">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Log Activity
+                        </button>
+                    </form>
+                </div>
+
+                <div class="lg:col-span-2 space-y-4" id="jurnal-list">
+                    <!-- List Jurnal -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL 1: ADD MEMBER FORM -->
+    <div id="modal-add-member" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-bright modal-box max-w-md w-full rounded-2xl p-6 relative">
+            <button onclick="closeAddMemberModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Add New Member</h3>
+            <p class="text-xs text-slate-500 mb-4">Input data anggota baru GAEC SMA Negeri 1 Purbalingga</p>
+            
+            <form id="form-add-member" onsubmit="submitNewMember(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nama Lengkap</label>
+                    <input type="text" id="new-member-nama" placeholder="Contoh: Anya Geraldine" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kelas</label>
+                        <input type="text" id="new-member-kelas" placeholder="e.g. XI F-1" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Angkatan</label>
+                        <select id="new-member-angkatan" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                            <option value="G64">G64</option>
+                            <option value="G65">G65</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jenis Kelamin</label>
+                    <select id="new-member-jk" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jabatan dalam Ekskul</label>
+                    <select id="new-member-jabatan" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        <option value="Member">Member</option>
+                        <option value="Ketua Ekskul">Ketua Ekskul</option>
+                        <option value="Sekretaris">Sekretaris</option>
+                        <option value="Bendahara">Bendahara</option>
+                        <option value="Pengurus">Pengurus / Divisi</option>
+                        <option value="Wakil Ketua">Wakil Ketua</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="new-member-prioritas" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                    <label for="new-member-prioritas" class="text-xs font-bold text-slate-700">Tandai sebagai Siswa Prioritas (Ekskul Utama)</label>
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeAddMemberModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-full text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 text-xs shadow-md">
+                        Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDIT MEMBER FORM -->
+    <div id="modal-edit-member" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-bright modal-box max-w-md w-full rounded-2xl p-6 relative">
+            <button onclick="closeEditMemberModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Edit Master Data Anggota</h3>
+            <p class="text-xs text-slate-500 mb-4">Ubah informasi nama, kelas, jabatan, atau status prioritas siswa</p>
+            
+            <form id="form-edit-member" onsubmit="submitEditMember(event)" class="space-y-4">
+                <input type="hidden" id="edit-member-index">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Nama Lengkap</label>
+                    <input type="text" id="edit-member-nama" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Kelas</label>
+                        <input type="text" id="edit-member-kelas" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Angkatan</label>
+                        <select id="edit-member-angkatan" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                            <option value="G64">G64</option>
+                            <option value="G65">G65</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jenis Kelamin</label>
+                    <select id="edit-member-jk" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Jabatan dalam Ekskul</label>
+                    <select id="edit-member-jabatan" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        <option value="Member">Member</option>
+                        <option value="Ketua Ekskul">Ketua Ekskul</option>
+                        <option value="Sekretaris">Sekretaris</option>
+                        <option value="Bendahara">Bendahara</option>
+                        <option value="Pengurus">Pengurus / Divisi</option>
+                        <option value="Wakil Ketua">Wakil Ketua</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="edit-member-prioritas" class="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500">
+                    <label for="edit-member-prioritas" class="text-xs font-bold text-slate-700">Tandai sebagai Siswa Prioritas (Ekskul Utama)</label>
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeEditMemberModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-full text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 text-xs shadow-md">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: EDIT PRESENSI -->
+    <div id="modal-edit-presensi" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-bright modal-box max-w-md w-full rounded-2xl p-6 relative">
+            <button onclick="closeEditPresensiModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Edit Presensi Siswa</h3>
+            <p class="text-xs text-slate-500 mb-4" id="edit-presensi-subtitle">Ubah status kehadiran atau keterangan siswa</p>
+            
+            <form id="form-edit-presensi" onsubmit="submitEditPresensi(event)" class="space-y-4">
+                <input type="hidden" id="edit-record-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Status Kehadiran</label>
+                    <select id="edit-presensi-status" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                        <option value="Hadir">Hadir</option>
+                        <option value="Izin">Izin</option>
+                        <option value="Sakit">Sakit</option>
+                        <option value="Alpha">Alpha</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Keterangan (Opsional)</label>
+                    <input type="text" id="edit-presensi-keterangan" placeholder="Contoh: Sakit Diare / Izin acara keluarga" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeEditPresensiModal()" class="w-1/2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2.5 rounded-full text-xs transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 text-xs shadow-md">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: PREVIEW ARSIP SURAT -->
+    <div id="modal-preview-surat" class="modal-backdrop fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="card-bright modal-box max-w-2xl w-full rounded-2xl p-6 relative">
+            <button onclick="closePreviewModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <h3 class="text-lg font-bold text-slate-800 mb-4" id="modal-preview-title">Pratinjau Dokumen</h3>
+            <div id="surat-container" class="w-full min-h-[300px] flex items-center justify-center border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                <!-- Img, PDF, atau link download Word -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // STORE PERMANEN LOCALSTORAGE
+        let anggotaData = JSON.parse(localStorage.getItem('gaec_anggota_v2')) || [
+            { nama: "Laana Ruswanto", kelas: "XI F-1", angkatan: "G64", jk: "Laki-laki", jabatan: "Sekretaris", prioritas: true },
+            { nama: "Nafisa Zahra", kelas: "X E-2", angkatan: "G65", jk: "Perempuan", jabatan: "Member", prioritas: false },
+            { nama: "Bagas Pratama", kelas: "XI F-4", angkatan: "G64", jk: "Laki-laki", jabatan: "Member", prioritas: true },
+            { nama: "Rania Putri", kelas: "X E-5", angkatan: "G65", jk: "Perempuan", jabatan: "Member", prioritas: false }
+        ];
+
+        let presensiJournalData = JSON.parse(localStorage.getItem('gaec_presensi_journal_v2')) || [];
+        let notulensiData = JSON.parse(localStorage.getItem('gaec_notulensi')) || [];
+        let jurnalData = JSON.parse(localStorage.getItem('gaec_jurnal')) || [];
+        let arsipSuratData = JSON.parse(localStorage.getItem('gaec_arsip_surat_v1')) || [];
+        let scanDaftarHadirData = JSON.parse(localStorage.getItem('gaec_arsip_daftar_hadir_v1')) || [];
+        let driveFolderUrl = localStorage.getItem('gaec_drive_folder_url_v1') || '';
+
+        // Init App
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            document.getElementById('input-tanggal-ekskul').valueAsDate = new Date();
+            document.getElementById('not-tanggal').valueAsDate = new Date();
+            document.getElementById('jur-tanggal').valueAsDate = new Date();
+            document.getElementById('arsip-tanggal').valueAsDate = new Date();
+            
+            const savedDriveInput = document.getElementById('input-drive-folder-url');
+            if (savedDriveInput) savedDriveInput.value = driveFolderUrl;
+            renderDriveFolderDisplay();
+
+            updateDashboardData();
+            renderAnggota();
+            generatePresenceTable();
+            renderPresenceJournal();
+            renderAttendanceReport();
+            renderNotulensi();
+            renderArsipSurat();
+            renderJurnalFeed();
+            populateActivityDropdown();
+            renderScanDaftarHadir();
+
+            // Set Initial Active Tab
+            switchTab('dashboard');
+        });
+
+        // Tab Switcher Smooth Transition
+        function switchTab(tabName) {
+            const allTabs = document.querySelectorAll('.tab-content');
+            const allBtns = document.querySelectorAll('.tab-btn');
+
+            allBtns.forEach(btn => btn.classList.remove('active-tab'));
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if (activeBtn) activeBtn.classList.add('active-tab');
+
+            allTabs.forEach(el => {
+                if (!el.classList.contains('hidden')) {
+                    el.classList.remove('show-tab');
+                    setTimeout(() => {
+                        el.classList.add('hidden');
+                        showTargetTab(tabName);
+                    }, 150);
+                }
+            });
+
+            if (document.querySelectorAll('.tab-content.show-tab').length === 0) {
+                showTargetTab(tabName);
+            }
+        }
+
+        function showTargetTab(tabName) {
+            const target = document.getElementById(`sec-${tabName}`);
+            if (target) {
+                target.classList.remove('hidden');
+                setTimeout(() => {
+                    target.classList.add('show-tab');
+                }, 20);
+            }
+        }
+
+        // --- DASHBOARD FUNCTIONS ---
+        function updateDashboardData() {
+            document.getElementById('hero-members-count').innerText = anggotaData.length;
+            document.getElementById('dash-g64-count').innerText = anggotaData.filter(x => x.angkatan === 'G64').length;
+            document.getElementById('dash-g65-count').innerText = anggotaData.filter(x => x.angkatan === 'G65').length;
+
+            const uniqueDates = [...new Set(presensiJournalData.map(x => x.tanggal))];
+            document.getElementById('dash-sessions-count').innerText = uniqueDates.length;
+
+            let hadirCount = presensiJournalData.filter(x => x.status === 'Hadir').length;
+            let totalEntries = presensiJournalData.length;
+            let rate = totalEntries > 0 ? Math.round((hadirCount / totalEntries) * 100) : 100;
+            document.getElementById('hero-presence-rate').innerText = `${rate}%`;
+
+            document.getElementById('hero-notulensi-count').innerText = notulensiData.length;
+            document.getElementById('dash-surat-count').innerText = arsipSuratData.length;
+        }
+
+        // --- MEMBERS FUNCTIONS & EDIT MEMBER ---
+        function renderAnggota() {
+            const grid = document.getElementById('anggota-grid');
+            const filter = document.getElementById('filter-members-angkatan').value;
+            grid.innerHTML = '';
+
+            let filtered = anggotaData;
+            if (filter !== 'ALL') {
+                filtered = anggotaData.filter(x => x.angkatan === filter);
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400">Belum ada anggota terdaftar.</div>`;
+                return;
+            }
+
+            filtered.forEach((item, index) => {
+                const originalIndex = anggotaData.findIndex(x => x === item);
+                let badgeAngkatan = item.angkatan === 'G64' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700';
+                const card = document.createElement('div');
+                card.className = "bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 class="font-bold text-slate-800 text-sm">${item.nama}</h4>
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full ${badgeAngkatan}">${item.angkatan}</span>
+                            ${item.prioritas ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 fill-amber-500"></i> Prioritas</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">${item.kelas} • <span class="text-slate-700 font-semibold">${item.jk}</span></p>
+                        <span class="inline-block bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md mt-1">${item.jabatan}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openEditMemberModal(${originalIndex})" class="btn-pill bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold p-2 text-xs flex items-center gap-1" title="Edit Anggota">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deleteAnggota(${originalIndex})" class="btn-pill bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold p-2 text-xs flex items-center gap-1" title="Hapus Anggota">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function openAddMemberModal() {
+            document.getElementById('modal-add-member').classList.add('open');
+        }
+
+        function closeAddMemberModal() {
+            document.getElementById('modal-add-member').classList.remove('open');
+            document.getElementById('form-add-member').reset();
+        }
+
+        function submitNewMember(e) {
+            e.preventDefault();
+            const nama = document.getElementById('new-member-nama').value;
+            const kelas = document.getElementById('new-member-kelas').value;
+            const angkatan = document.getElementById('new-member-angkatan').value;
+            const jk = document.getElementById('new-member-jk').value;
+            const jabatan = document.getElementById('new-member-jabatan').value;
+            const prioritas = document.getElementById('new-member-prioritas').checked;
+
+            anggotaData.push({ nama, kelas, angkatan, jk, jabatan, prioritas });
+            localStorage.setItem('gaec_anggota_v2', JSON.stringify(anggotaData));
+
+            closeAddMemberModal();
+            renderAnggota();
+            generatePresenceTable();
+            renderAttendanceReport();
+            updateDashboardData();
+        }
+
+        function openEditMemberModal(index) {
+            const member = anggotaData[index];
+            if (!member) return;
+
+            document.getElementById('edit-member-index').value = index;
+            document.getElementById('edit-member-nama').value = member.nama;
+            document.getElementById('edit-member-kelas').value = member.kelas;
+            document.getElementById('edit-member-angkatan').value = member.angkatan;
+            document.getElementById('edit-member-jk').value = member.jk;
+            document.getElementById('edit-member-jabatan').value = member.jabatan;
+            document.getElementById('edit-member-prioritas').checked = member.prioritas || false;
+
+            document.getElementById('modal-edit-member').classList.add('open');
+        }
+
+        function closeEditMemberModal() {
+            document.getElementById('modal-edit-member').classList.remove('open');
+            document.getElementById('form-edit-member').reset();
+        }
+
+        function submitEditMember(e) {
+            e.preventDefault();
+            const index = document.getElementById('edit-member-index').value;
+            if (index === "" || !anggotaData[index]) return;
+
+            anggotaData[index].nama = document.getElementById('edit-member-nama').value;
+            anggotaData[index].kelas = document.getElementById('edit-member-kelas').value;
+            anggotaData[index].angkatan = document.getElementById('edit-member-angkatan').value;
+            anggotaData[index].jk = document.getElementById('edit-member-jk').value;
+            anggotaData[index].jabatan = document.getElementById('edit-member-jabatan').value;
+            anggotaData[index].prioritas = document.getElementById('edit-member-prioritas').checked;
+
+            localStorage.setItem('gaec_anggota_v2', JSON.stringify(anggotaData));
+
+            closeEditMemberModal();
+            renderAnggota();
+            generatePresenceTable();
+            renderAttendanceReport();
+            updateDashboardData();
+            alert('Data anggota berhasil diperbarui!');
+        }
+
+        function deleteAnggota(index) {
+            if(confirm('Hapus anggota ini dari Master Data?')) {
+                anggotaData.splice(index, 1);
+                localStorage.setItem('gaec_anggota_v2', JSON.stringify(anggotaData));
+                renderAnggota();
+                generatePresenceTable();
+                renderAttendanceReport();
+                updateDashboardData();
+            }
+        }
+
+        // --- ARSIP GOOGLE DRIVE FOLDER SURAT IJIN & SCAN DAFTAR HADIR ---
+        function saveDriveFolderUrl() {
+            const urlInput = document.getElementById('input-drive-folder-url').value.trim();
+            driveFolderUrl = urlInput;
+            localStorage.setItem('gaec_drive_folder_url_v1', driveFolderUrl);
+            renderDriveFolderDisplay();
+            alert('Tautan folder Google Drive berhasil disimpan!');
+        }
+
+        function renderDriveFolderDisplay() {
+            const container = document.getElementById('drive-folder-display-container');
+            if (!container) return;
+            if (driveFolderUrl) {
+                container.innerHTML = `Folder Aktif: <a href="${driveFolderUrl}" target="_blank" class="text-sky-600 font-bold hover:underline inline-flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Buka Folder Google Drive Surat Izin</a>`;
+            } else {
+                container.innerHTML = `<span class="text-slate-400 font-medium italic">Belum ada link folder Google Drive yang diatur. Silakan unggah surat ke drive Anda lalu tempel link foldernya di sini.</span>`;
+            }
+            lucide.createIcons();
+        }
+
+        function populateActivityDropdown() {
+            const select = document.getElementById('scan-dh-activity');
+            if (!select) return;
+
+            select.innerHTML = '';
+            if (jurnalData.length === 0) {
+                select.innerHTML = '<option value="">-- Belum ada Activity Log --</option>';
+                return;
+            }
+
+            select.innerHTML = '<option value="">-- Pilih Kegiatan Activity Log --</option>';
+            jurnalData.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = `[${item.tanggal}] ${item.materi} (Mentor: ${item.pemateri})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function uploadScanDaftarHadir(e) {
+            e.preventDefault();
+            const activityId = document.getElementById('scan-dh-activity').value;
+            const fileInput = document.getElementById('scan-dh-file');
+            const ketInput = document.getElementById('scan-dh-keterangan').value;
+
+            if (!activityId) {
+                alert('Pilih kegiatan dari Activity Log terlebih dahulu!');
+                return;
+            }
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Silakan pilih berkas scan daftar hadir!');
+                return;
+            }
+
+            const activity = jurnalData.find(x => x.id == activityId);
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(evt) {
+                const newItem = {
+                    id: Date.now(),
+                    activityId: activityId,
+                    tanggal: activity ? activity.tanggal : '-',
+                    materi: activity ? activity.materi : 'Kegiatan',
+                    keterangan: ketInput,
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileData: evt.target.result
+                };
+
+                scanDaftarHadirData.push(newItem);
+                localStorage.setItem('gaec_arsip_daftar_hadir_v1', JSON.stringify(scanDaftarHadirData));
+
+                document.getElementById('form-upload-scan-dh').reset();
+                renderScanDaftarHadir();
+                alert('Scan Daftar Hadir berhasil diarsipkan!');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function renderScanDaftarHadir() {
+            const container = document.getElementById('scan-dh-list');
+            const countEl = document.getElementById('scan-dh-count');
+            if (!container) return;
+
+            container.innerHTML = '';
+            countEl.innerText = `${scanDaftarHadirData.length} Berkas`;
+
+            if (scanDaftarHadirData.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs bg-white rounded-xl border border-dashed border-slate-200">Belum ada scan daftar hadir terunggah.</div>`;
+                return;
+            }
+
+            scanDaftarHadirData.slice().reverse().forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 p-3.5 rounded-xl flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div class="overflow-hidden">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">${item.tanggal}</span>
+                            <span class="text-xs font-bold text-slate-800 truncate">${item.materi}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 font-medium truncate">${item.keterangan || item.fileName}</p>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button onclick="previewScanDaftarHadir(${item.id})" class="btn-pill bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold px-3 py-1.5 text-xs flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat
+                        </button>
+                        <button onclick="deleteScanDaftarHadir(${item.id})" class="btn-pill bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold px-3 py-1.5 text-xs flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function previewScanDaftarHadir(id) {
+            const item = scanDaftarHadirData.find(x => x.id === id);
+            if (!item) return;
+
+            const container = document.getElementById('surat-container');
+            document.getElementById('modal-preview-title').innerText = `Scan Daftar Hadir: ${item.materi} (${item.tanggal})`;
+
+            if (item.fileType === 'application/pdf') {
+                container.innerHTML = `<iframe src="${item.fileData}" class="w-full h-[60vh] rounded-xl"></iframe>`;
+            } else {
+                container.innerHTML = `<img src="${item.fileData}" alt="Scan Daftar Hadir" class="max-w-full max-h-[60vh] object-contain rounded-xl">`;
+            }
+
+            document.getElementById('modal-preview-surat').classList.add('open');
+        }
+
+        function deleteScanDaftarHadir(id) {
+            if (confirm('Hapus scan daftar hadir ini?')) {
+                scanDaftarHadirData = scanDaftarHadirData.filter(x => x.id !== id);
+                localStorage.setItem('gaec_arsip_daftar_hadir_v1', JSON.stringify(scanDaftarHadirData));
+                renderScanDaftarHadir();
+            }
+        }
+
+        // --- PRESENCE FUNCTIONS ---
+        function generatePresenceTable() {
+            const tbody = document.getElementById('presence-input-table-body');
+            const filterAngkatan = document.getElementById('presence-filter-angkatan').value;
+            tbody.innerHTML = '';
+
+            let filtered = anggotaData;
+            if (filterAngkatan !== 'ALL') {
+                filtered = anggotaData.filter(x => x.angkatan === filterAngkatan);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Tidak ada anggota terdaftar untuk filter angkatan ini.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((member, index) => {
+                let badgeAngkatan = member.angkatan === 'G64' ? 'bg-sky-100 text-sky-700' : 'bg-indigo-100 text-indigo-700';
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors duration-200";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-medium text-slate-500 text-xs">${index + 1}</td>
+                    <td class="py-3 px-3 font-bold text-slate-800">${member.nama}</td>
+                    <td class="py-3 px-3 text-slate-600 text-xs font-semibold">${member.kelas}</td>
+                    <td class="py-3 px-3"><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeAngkatan}">${member.angkatan}</span></td>
+                    <td class="py-3 px-3">
+                        ${member.prioritas ? '<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 inline-flex items-center gap-1"><i data-lucide="star" class="w-3 h-3 fill-amber-500"></i> Utama</span>' : '<span class="text-xs text-slate-400">Reguler</span>'}
+                    </td>
+                    <td class="py-3 px-3">
+                        <select id="status-select-${index}" class="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-700 focus:outline-none focus:border-sky-500 transition">
+                            <option value="Hadir">Hadir</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Sakit">Sakit</option>
+                            <option value="Alpha">Alpha</option>
+                        </select>
+                    </td>
+                    <td class="py-3 px-3">
+                        <input type="text" id="keterangan-input-${index}" placeholder="Opsional (mis: Sakit Diare)" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 text-xs font-medium text-slate-800 focus:outline-none focus:border-sky-500 transition">
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function saveAllPresence() {
+            const tanggal = document.getElementById('input-tanggal-ekskul').value;
+            const filterAngkatan = document.getElementById('presence-filter-angkatan').value;
+            if (!tanggal) {
+                alert('Pilih tanggal pertemuan ekskul terlebih dahulu!');
+                return;
+            }
+
+            let filteredMembers = anggotaData;
+            if (filterAngkatan !== 'ALL') {
+                filteredMembers = anggotaData.filter(x => x.angkatan === filterAngkatan);
+            }
+
+            if (filteredMembers.length === 0) {
+                alert('Tidak ada data anggota untuk disimpan!');
+                return;
+            }
+
+            let newEntries = [];
+            filteredMembers.forEach((member, index) => {
+                const statusSelect = document.getElementById(`status-select-${index}`);
+                const ketInput = document.getElementById(`keterangan-input-${index}`);
+                
+                const status = statusSelect ? statusSelect.value : 'Hadir';
+                const keterangan = ketInput ? ketInput.value.trim() : '';
+
+                newEntries.push({
+                    id: Date.now() + Math.random(),
+                    tanggal: tanggal,
+                    nama: member.nama,
+                    kelas: member.kelas,
+                    angkatan: member.angkatan,
+                    prioritas: member.prioritas,
+                    status: status,
+                    keterangan: keterangan
+                });
+            });
+
+            presensiJournalData.push(...newEntries);
+            localStorage.setItem('gaec_presensi_journal_v2', JSON.stringify(presensiJournalData));
+
+            alert(`Presensi tanggal ${tanggal} (${filterAngkatan}) berhasil disimpan!`);
+            renderPresenceJournal();
+            renderAttendanceReport();
+            updateDashboardData();
+        }
+
+        // --- EDIT PRESENSI ---
+        function openEditPresensi(id) {
+            const item = presensiJournalData.find(x => x.id == id);
+            if (!item) return;
+
+            document.getElementById('edit-record-id').value = item.id;
+            document.getElementById('edit-presensi-status').value = item.status;
+            document.getElementById('edit-presensi-keterangan').value = item.keterangan || '';
+            document.getElementById('edit-presensi-subtitle').innerText = `Mengubah data presensi: ${item.nama} (${item.tanggal})`;
+
+            document.getElementById('modal-edit-presensi').classList.add('open');
+        }
+
+        function closeEditPresensiModal() {
+            document.getElementById('modal-edit-presensi').classList.remove('open');
+            document.getElementById('form-edit-presensi').reset();
+        }
+
+        function submitEditPresensi(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-record-id').value;
+            const newStatus = document.getElementById('edit-presensi-status').value;
+            const newKet = document.getElementById('edit-presensi-keterangan').value.trim();
+
+            const idx = presensiJournalData.findIndex(x => x.id == id);
+            if (idx !== -1) {
+                presensiJournalData[idx].status = newStatus;
+                presensiJournalData[idx].keterangan = newKet;
+                localStorage.setItem('gaec_presensi_journal_v2', JSON.stringify(presensiJournalData));
+
+                closeEditPresensiModal();
+                renderPresenceJournal();
+                renderAttendanceReport();
+                updateDashboardData();
+                alert('Data presensi berhasil diperbarui!');
+            }
+        }
+
+        // --- PRESENCE JOURNAL ACCORDION ---
+        function renderPresenceJournal() {
+            const container = document.getElementById('presence-journal-accordion');
+            const filterAngkatan = document.getElementById('journal-filter-angkatan').value;
+            container.innerHTML = '';
+
+            let dataToRender = presensiJournalData;
+            if (filterAngkatan !== 'ALL') {
+                dataToRender = presensiJournalData.filter(x => x.angkatan === filterAngkatan);
+            }
+
+            if (dataToRender.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">Belum ada riwayat presensi tersimpan.</div>`;
+                return;
+            }
+
+            const grouped = {};
+            dataToRender.forEach(item => {
+                if (!grouped[item.tanggal]) grouped[item.tanggal] = [];
+                grouped[item.tanggal].push(item);
+            });
+
+            const dates = Object.keys(grouped).sort((a,b) => new Date(b) - new Date(a));
+
+            dates.forEach((tgl, idx) => {
+                const records = grouped[tgl];
+                const dateObj = new Date(tgl);
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const formattedDateStr = dateObj.toLocaleDateString('id-ID', options);
+
+                const hadirCount = records.filter(r => r.status === 'Hadir').length;
+                const sakitCount = records.filter(r => r.status === 'Sakit').length;
+                const izinCount = records.filter(r => r.status === 'Izin').length;
+                const alphaCount = records.filter(r => r.status === 'Alpha').length;
+
+                const folderDiv = document.createElement('div');
+                folderDiv.className = "border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md";
+                folderDiv.innerHTML = `
+                    <div onclick="toggleAccordion('acc-${idx}', this)" class="p-4 bg-slate-50 hover:bg-slate-100 cursor-pointer flex flex-wrap justify-between items-center gap-3 transition-colors duration-200">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 bg-purple-100 text-purple-700 rounded-xl">
+                                <i data-lucide="folder" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base">${formattedDateStr}</h3>
+                                <p class="text-xs text-slate-500 font-semibold">Total Terdata: ${records.length} Siswa</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <div class="flex gap-1.5 text-xs font-bold">
+                                <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-md">H: ${hadirCount}</span>
+                                <span class="bg-sky-100 text-sky-700 px-2 py-0.5 rounded-md">S: ${sakitCount}</span>
+                                <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">I: ${izinCount}</span>
+                                <span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md">A: ${alphaCount}</span>
+                            </div>
+
+                            <button onclick="event.stopPropagation(); printSession('${tgl}')" class="btn-pill bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 flex items-center gap-1">
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print
+                            </button>
+                            <button onclick="event.stopPropagation(); deletePresenceSession('${tgl}')" class="btn-pill bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-3 py-1.5 flex items-center gap-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                            </button>
+                            <i data-lucide="chevron-down" class="chevron-icon w-5 h-5 text-slate-400 transition-transform duration-300"></i>
+                        </div>
+                    </div>
+
+                    <div id="acc-${idx}" class="accordion-content px-4 border-t border-slate-200 overflow-x-auto">
+                        <div class="py-4">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-slate-400 text-xs font-bold uppercase">
+                                        <th class="py-2 px-2">Nama</th>
+                                        <th class="py-2 px-2">Kelas</th>
+                                        <th class="py-2 px-2">Angkatan</th>
+                                        <th class="py-2 px-2">Status</th>
+                                        <th class="py-2 px-2">Keterangan</th>
+                                        <th class="py-2 px-2 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-xs divide-y divide-slate-100">
+                                    ${records.map(rec => {
+                                        let badge = 'bg-emerald-100 text-emerald-700';
+                                        if(rec.status === 'Izin') badge = 'bg-amber-100 text-amber-700';
+                                        if(rec.status === 'Sakit') badge = 'bg-sky-100 text-sky-700';
+                                        if(rec.status === 'Alpha') badge = 'bg-rose-100 text-rose-700';
+
+                                        return `
+                                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                                <td class="py-2.5 px-2 font-bold text-slate-800">${rec.nama}</td>
+                                                <td class="py-2.5 px-2 text-slate-600">${rec.kelas}</td>
+                                                <td class="py-2.5 px-2 font-semibold text-slate-700">${rec.angkatan}</td>
+                                                <td class="py-2.5 px-2"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badge}">${rec.status}</span></td>
+                                                <td class="py-2.5 px-2 text-slate-600">${rec.keterangan || '-'}</td>
+                                                <td class="py-2.5 px-2 text-right">
+                                                    <button onclick="openEditPresensi(${rec.id})" class="btn-pill bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold px-2.5 py-1 text-[11px] inline-flex items-center gap-1">
+                                                        <i data-lucide="edit-3" class="w-3 h-3"></i> Edit
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(folderDiv);
+            });
+            lucide.createIcons();
+        }
+
+        function deletePresenceSession(tgl) {
+            if (confirm(`Apakah Anda yakin ingin menghapus seluruh rekapan presensi tanggal ${tgl}?`)) {
+                presensiJournalData = presensiJournalData.filter(x => x.tanggal !== tgl);
+                localStorage.setItem('gaec_presensi_journal_v2', JSON.stringify(presensiJournalData));
+                renderPresenceJournal();
+                renderAttendanceReport();
+                updateDashboardData();
+            }
+        }
+
+        function toggleAccordion(id, headerEl) {
+            const el = document.getElementById(id);
+            const chevron = headerEl.querySelector('.chevron-icon');
+            if (el) {
+                el.classList.toggle('open');
+                if (chevron) {
+                    chevron.style.transform = el.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+                }
+            }
+        }
+
+        function printSession(tgl) {
+            alert(`Mencetak Rekap Presensi untuk Pertemuan Tanggal ${tgl}`);
+            window.print();
+        }
+
+        function closePreviewModal() {
+            document.getElementById('modal-preview-surat').classList.remove('open');
+        }
+
+        // --- REPORT REKAPITULASI & DOWNLOAD OPSI PDF / XLS ---
+        function renderAttendanceReport() {
+            const tbody = document.getElementById('report-table-body');
+            const filterAngkatan = document.getElementById('report-filter-angkatan').value;
+            tbody.innerHTML = '';
+
+            let filteredMembers = anggotaData;
+            if (filterAngkatan !== 'ALL') {
+                filteredMembers = anggotaData.filter(x => x.angkatan === filterAngkatan);
+            }
+
+            if (filteredMembers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center py-6 text-slate-400">Tidak ada data anggota.</td></tr>`;
+                return;
+            }
+
+            filteredMembers.forEach((member, index) => {
+                const memberPresences = presensiJournalData.filter(x => x.nama === member.nama);
+                const hadir = memberPresences.filter(x => x.status === 'Hadir').length;
+                const sakit = memberPresences.filter(x => x.status === 'Sakit').length;
+                const izin = memberPresences.filter(x => x.status === 'Izin').length;
+                const alpha = memberPresences.filter(x => x.status === 'Alpha').length;
+                const total = memberPresences.length;
+
+                const percent = total > 0 ? Math.round((hadir / total) * 100) : 0;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-medium text-slate-500 text-xs">${index + 1}</td>
+                    <td class="py-3 px-3 font-bold text-slate-800">${member.nama}</td>
+                    <td class="py-3 px-3 text-slate-600 text-xs font-semibold">${member.kelas}</td>
+                    <td class="py-3 px-3 font-semibold text-slate-700 text-xs">${member.angkatan}</td>
+                    <td class="py-3 px-3 text-center">${member.prioritas ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Utama</span>' : '<span class="text-xs text-slate-400">-</span>'}</td>
+                    <td class="py-3 px-3 text-center font-extrabold text-emerald-600 bg-emerald-50/50">${hadir}</td>
+                    <td class="py-3 px-3 text-center font-extrabold text-sky-600">${sakit}</td>
+                    <td class="py-3 px-3 text-center font-extrabold text-amber-600">${izin}</td>
+                    <td class="py-3 px-3 text-center font-extrabold text-rose-600">${alpha}</td>
+                    <td class="py-3 px-3 text-center font-extrabold text-slate-800">${percent}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function downloadReportPDF() {
+            const element = document.getElementById('sec-report');
+            const opt = {
+                margin:       10,
+                filename:     'Rekapitulasi_Presensi_GAEC.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
+            };
+            html2pdf().from(element).set(opt).save();
+        }
+
+        function downloadReportXLS() {
+            const filterAngkatan = document.getElementById('report-filter-angkatan').value;
+            let filteredMembers = anggotaData;
+            if (filterAngkatan !== 'ALL') {
+                filteredMembers = anggotaData.filter(x => x.angkatan === filterAngkatan);
+            }
+
+            let excelData = filteredMembers.map((member, index) => {
+                const memberPresences = presensiJournalData.filter(x => x.nama === member.nama);
+                const hadir = memberPresences.filter(x => x.status === 'Hadir').length;
+                const sakit = memberPresences.filter(x => x.status === 'Sakit').length;
+                const izin = memberPresences.filter(x => x.status === 'Izin').length;
+                const alpha = memberPresences.filter(x => x.status === 'Alpha').length;
+                const total = memberPresences.length;
+                const percent = total > 0 ? `${Math.round((hadir / total) * 100)}%` : '0%';
+
+                return {
+                    "No": index + 1,
+                    "Nama Siswa": member.nama,
+                    "Kelas": member.kelas,
+                    "Angkatan": member.angkatan,
+                    "Prioritas Ekskul Utama": member.prioritas ? "Ya (Utama)" : "Tidak",
+                    "Hadir": hadir,
+                    "Sakit": sakit,
+                    "Izin": izin,
+                    "Alpha": alpha,
+                    "Persentase Kehadiran": percent
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            worksheet['!cols'] = [
+                {wch: 5}, {wch: 25}, {wch: 12}, {wch: 10}, {wch: 20}, {wch: 8}, {wch: 8}, {wch: 8}, {wch: 8}, {wch: 20}
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Presensi GAEC");
+            XLSX.writeFile(workbook, `Rekapitulasi_Presensi_GAEC_${filterAngkatan}.xlsx`);
+        }
+
+        // --- NOTULENSI FUNCTIONS ---
+        function saveNotulensi(e) {
+            e.preventDefault();
+            const tanggal = document.getElementById('not-tanggal').value;
+            const judul = document.getElementById('not-judul').value;
+            const pimpinan = document.getElementById('not-pimpinan').value;
+            const peserta = document.getElementById('not-peserta').value;
+            const hasil = document.getElementById('not-hasil').value;
+
+            notulensiData.push({ id: Date.now(), tanggal, judul, pimpinan, peserta, hasil });
+            localStorage.setItem('gaec_notulensi', JSON.stringify(notulensiData));
+
+            document.getElementById('form-notulensi').reset();
+            document.getElementById('not-tanggal').valueAsDate = new Date();
+            renderNotulensi();
+            updateDashboardData();
+        }
+
+        function renderNotulensi() {
+            const container = document.getElementById('notulensi-list');
+            container.innerHTML = '';
+
+            if (notulensiData.length === 0) {
+                container.innerHTML = `<div class="card-bright rounded-2xl p-6 text-center text-slate-400 font-medium">Belum ada notulensi rapat tersimpan.</div>`;
+                return;
+            }
+
+            notulensiData.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)).forEach(item => {
+                const card = document.createElement('div');
+                card.className = "card-bright rounded-2xl p-6 relative hover:shadow-lg transition-shadow duration-300";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">${item.tanggal}</span>
+                        <div class="flex gap-2 no-print">
+                            <button onclick="window.print()" class="text-slate-400 hover:text-slate-700 transition"><i data-lucide="printer" class="w-4 h-4"></i></button>
+                            <button onclick="deleteNotulensi(${item.id})" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">${item.judul}</h3>
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-600 mb-4 bg-slate-50 p-3 rounded-xl">
+                        <p><strong class="text-slate-800">Pimpinan:</strong> ${item.pimpinan}</p>
+                        <p><strong class="text-slate-800">Peserta:</strong> ${item.peserta}</p>
+                    </div>
+                    <div class="text-xs text-slate-700 whitespace-pre-line bg-white p-3 rounded-xl border border-slate-200">${item.hasil}</div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function deleteNotulensi(id) {
+            if(confirm('Hapus notulensi rapat ini?')) {
+                notulensiData = notulensiData.filter(x => x.id != id);
+                localStorage.setItem('gaec_notulensi', JSON.stringify(notulensiData));
+                renderNotulensi();
+                updateDashboardData();
+            }
+        }
+
+        // --- ARSIP SURAT FUNCTIONS ---
+        function uploadArsipSurat(e) {
+            e.preventDefault();
+            const nomor = document.getElementById('arsip-nomor').value;
+            const perihal = document.getElementById('arsip-perihal').value;
+            const kategori = document.getElementById('arsip-kategori').value;
+            const tanggal = document.getElementById('arsip-tanggal').value;
+            const fileInput = document.getElementById('arsip-file');
+
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Silakan pilih berkas surat!');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(evt) {
+                const newArsip = {
+                    id: Date.now(),
+                    nomor: nomor,
+                    perihal: perihal,
+                    kategori: kategori,
+                    tanggal: tanggal,
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileData: evt.target.result
+                };
+
+                arsipSuratData.push(newArsip);
+                localStorage.setItem('gaec_arsip_surat_v1', JSON.stringify(arsipSuratData));
+
+                document.getElementById('form-upload-surat').reset();
+                document.getElementById('arsip-tanggal').valueAsDate = new Date();
+                
+                renderArsipSurat();
+                updateDashboardData();
+                alert('Surat berhasil diarsipkan!');
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        function renderArsipSurat() {
+            const container = document.getElementById('arsip-surat-list');
+            const filterKat = document.getElementById('filter-arsip-kategori').value;
+            container.innerHTML = '';
+
+            let dataToRender = arsipSuratData;
+            if (filterKat !== 'ALL') {
+                dataToRender = arsipSuratData.filter(x => x.kategori === filterKat);
+            }
+
+            if (dataToRender.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">Belum ada berkas surat terarsip.</div>`;
+                return;
+            }
+
+            dataToRender.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)).forEach(item => {
+                let badgeColor = 'bg-sky-100 text-sky-700';
+                if (item.kategori === 'Surat Masuk') badgeColor = 'bg-emerald-100 text-emerald-700';
+                if (item.kategori === 'Surat Keluar') badgeColor = 'bg-indigo-100 text-indigo-700';
+                if (item.kategori === 'Surat Tugas') badgeColor = 'bg-amber-100 text-amber-700';
+
+                const card = document.createElement('div');
+                card.className = "bg-white border border-slate-200 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColor}">${item.kategori}</span>
+                            <span class="text-xs text-slate-400 font-semibold">${item.tanggal}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm">${item.perihal}</h4>
+                        <p class="text-xs text-slate-500 font-mono mt-0.5">No: ${item.nomor}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="previewArsipSurat(${item.id})" class="btn-pill bg-sky-50 text-sky-600 hover:bg-sky-100 font-bold px-3 py-1.5 text-xs flex items-center gap-1">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat
+                        </button>
+                        <button onclick="deleteArsipSurat(${item.id})" class="btn-pill bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold px-3 py-1.5 text-xs flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function previewArsipSurat(id) {
+            const item = arsipSuratData.find(x => x.id === id);
+            if (!item) return;
+
+            const container = document.getElementById('surat-container');
+            document.getElementById('modal-preview-title').innerText = `Arsip Surat: ${item.perihal}`;
+
+            if (item.fileType === 'application/pdf') {
+                container.innerHTML = `<iframe src="${item.fileData}" class="w-full h-[60vh] rounded-xl"></iframe>`;
+            } else if (item.fileType.startsWith('image/')) {
+                container.innerHTML = `<img src="${item.fileData}" alt="Arsip Surat" class="max-w-full max-h-[60vh] object-contain rounded-xl">`;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center p-6">
+                        <i data-lucide="file-text" class="w-12 h-12 text-slate-400 mx-auto mb-2"></i>
+                        <p class="text-sm font-bold text-slate-700">${item.fileName}</p>
+                        <p class="text-xs text-slate-400 mb-4">Dokumen ini berupa file eksternal (Word/Docx).</p>
+                        <a href="${item.fileData}" download="${item.fileName}" class="btn-pill bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 text-xs inline-flex items-center gap-2">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download Dokumen
+                        </a>
+                    </div>
+                `;
+            }
+
+            document.getElementById('modal-preview-surat').classList.add('open');
+            lucide.createIcons();
+        }
+
+        function deleteArsipSurat(id) {
+            if (confirm('Hapus berkas surat ini dari arsip?')) {
+                arsipSuratData = arsipSuratData.filter(x => x.id !== id);
+                localStorage.setItem('gaec_arsip_surat_v1', JSON.stringify(arsipSuratData));
+                renderArsipSurat();
+                updateDashboardData();
+            }
+        }
+
+        // --- ACTIVITY LOG / JOURNAL FUNCTIONS ---
+        function saveJurnal(e) {
+            e.preventDefault();
+            const tanggal = document.getElementById('jur-tanggal').value;
+            const materi = document.getElementById('jur-materi').value;
+            const pemateri = document.getElementById('jur-pemateri').value;
+            const ringkasan = document.getElementById('jur-ringkasan').value;
+
+            const newJurnal = {
+                id: Date.now(),
+                tanggal,
+                materi,
+                pemateri,
+                ringkasan
+            };
+
+            jurnalData.push(newJurnal);
+            localStorage.setItem('gaec_jurnal', JSON.stringify(jurnalData));
+
+            document.getElementById('form-jurnal').reset();
+            document.getElementById('jur-tanggal').valueAsDate = new Date();
+
+            renderJurnalFeed();
+            populateActivityDropdown();
+        }
+
+        function renderJurnalFeed() {
+            const container = document.getElementById('jurnal-list');
+            container.innerHTML = '';
+
+            if (jurnalData.length === 0) {
+                container.innerHTML = `<div class="card-bright rounded-2xl p-6 text-center text-slate-400 font-medium">Belum ada catatan Activity Log tersimpan.</div>`;
+                return;
+            }
+
+            jurnalData.sort((a,b) => new Date(b.tanggal) - new Date(a.tanggal)).forEach(item => {
+                const card = document.createElement('div');
+                card.className = "card-bright rounded-2xl p-6 relative hover:shadow-lg transition-shadow duration-300";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-bold text-purple-700 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">${item.tanggal}</span>
+                        <button onclick="deleteJurnal(${item.id})" class="text-slate-400 hover:text-rose-600 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-1">${item.materi}</h3>
+                    <p class="text-xs text-purple-600 font-semibold mb-3">Mentor / Speaker: ${item.pemateri}</p>
+                    <div class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">${item.ringkasan}</div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function deleteJurnal(id) {
+            if (confirm('Hapus log aktivitas ini?')) {
+                jurnalData = jurnalData.filter(x => x.id !== id);
+                localStorage.setItem('gaec_jurnal', JSON.stringify(jurnalData));
+                renderJurnalFeed();
+                populateActivityDropdown();
+            }
+        }
+    </script>
+</body>
+</html>
